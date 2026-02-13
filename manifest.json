@@ -1,0 +1,18 @@
+
+{
+  "name": "DeckMaster AI",
+  "short_name": "DeckMaster",
+  "description": "Professional card deck management and AI analysis.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/263/263068.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
