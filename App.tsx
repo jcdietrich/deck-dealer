@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import Layout from './components/Layout';
-import { Deck, CardImage } from './types';
-import { extractImagesFromZip } from './services/zipService';
-import { analyzeDeck } from './services/geminiService';
-import { saveDecks, loadDecks, requestPersistentStorage } from './services/storageService';
+import Layout from './components/Layout.tsx';
+import { Deck, CardImage } from './types.ts';
+import { extractImagesFromZip } from './services/zipService.ts';
+import { analyzeDeck } from './services/geminiService.ts';
+import { saveDecks, loadDecks, requestPersistentStorage } from './services/storageService.ts';
 
 const App: React.FC = () => {
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -17,11 +17,9 @@ const App: React.FC = () => {
   const [tagInput, setTagInput] = useState('');
   const [isAppLoading, setIsAppLoading] = useState(true);
   
-  // Swipe Gesture State
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // Form State for Deck
   const [formName, setFormName] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [formStartFaceDown, setFormStartFaceDown] = useState(false);
@@ -34,13 +32,21 @@ const App: React.FC = () => {
 
   const selectedDeck = decks.find(d => d.id === selectedDeckId);
 
-  // Initialize App: Load from DB and Request Persistence
   useEffect(() => {
     const init = async () => {
       try {
         await requestPersistentStorage();
         const storedDecks = await loadDecks();
-        setDecks(storedDecks);
+        // Ensure legacy data or corrupted data has initialized fields
+        const cleanedDecks = storedDecks.map(d => ({
+          ...d,
+          cards: d.cards.map(c => ({
+            ...c,
+            tags: c.tags || [],
+            note: c.note || ''
+          }))
+        }));
+        setDecks(cleanedDecks);
       } catch (e) {
         console.error("Failed to load collection", e);
       } finally {
@@ -50,14 +56,12 @@ const App: React.FC = () => {
     init();
   }, []);
 
-  // Save to DB whenever decks change
   useEffect(() => {
     if (!isAppLoading) {
       saveDecks(decks);
     }
   }, [decks, isAppLoading]);
 
-  // Handle auto-shuffle and initial state when deck is selected
   const handleSelectDeck = (deckId: string) => {
     const targetDeck = decks.find(d => d.id === deckId);
     setSelectedDeckId(deckId);
@@ -73,7 +77,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeCardIndex === null || !selectedDeck) return;
@@ -116,7 +119,9 @@ const App: React.FC = () => {
       }).map(card => ({ 
         ...card, 
         rotation: 0, 
-        isFlipped: formStartFaceDown 
+        isFlipped: formStartFaceDown,
+        tags: [],
+        note: ''
       }));
 
       const newDeck: Deck = {
@@ -241,8 +246,9 @@ const App: React.FC = () => {
     setDecks(prev => prev.map(deck => {
       if (deck.id !== deckId) return deck;
       const newCards = [...deck.cards];
-      if (!newCards[cardIndex].tags.includes(tag.trim())) {
-        newCards[cardIndex] = { ...newCards[cardIndex], tags: [...newCards[cardIndex].tags, tag.trim()] };
+      const currentTags = newCards[cardIndex].tags || [];
+      if (!currentTags.includes(tag.trim())) {
+        newCards[cardIndex] = { ...newCards[cardIndex], tags: [...currentTags, tag.trim()] };
       }
       return { ...deck, cards: newCards };
     }));
@@ -271,7 +277,8 @@ const App: React.FC = () => {
     setDecks(prev => prev.map(deck => {
       if (deck.id !== deckId) return deck;
       const newCards = [...deck.cards];
-      newCards[cardIndex] = { ...newCards[cardIndex], tags: newCards[cardIndex].tags.filter(t => t !== tagToRemove) };
+      const currentTags = newCards[cardIndex].tags || [];
+      newCards[cardIndex] = { ...newCards[cardIndex], tags: currentTags.filter(t => t !== tagToRemove) };
       return { ...deck, cards: newCards };
     }));
   };
@@ -282,7 +289,7 @@ const App: React.FC = () => {
     const query = searchQuery.toLowerCase();
     return selectedDeck.cards.filter(card => 
       card.title.toLowerCase().includes(query) || 
-      card.tags.some(tag => tag.toLowerCase().includes(query)) ||
+      (card.tags || []).some(tag => tag.toLowerCase().includes(query)) ||
       (card.note || '').toLowerCase().includes(query)
     );
   }, [selectedDeck, searchQuery]);
@@ -484,8 +491,8 @@ const App: React.FC = () => {
                             <p className="text-[10px] text-white truncate font-medium mb-1">{isFlipped ? '???' : card.title}</p>
                             {!isFlipped && (
                               <div className="flex flex-wrap gap-1">
-                                {card.tags.slice(0, 2).map((tag, i) => <span key={i} className="text-[8px] bg-indigo-600/80 text-white px-1 rounded uppercase tracking-tighter">{tag}</span>)}
-                                {card.tags.length > 2 && <span className="text-[8px] text-slate-400">+{card.tags.length - 2}</span>}
+                                {(card.tags || []).slice(0, 2).map((tag, i) => <span key={i} className="text-[8px] bg-indigo-600/80 text-white px-1 rounded uppercase tracking-tighter">{tag}</span>)}
+                                {(card.tags || []).length > 2 && <span className="text-[8px] text-slate-400">+{(card.tags || []).length - 2}</span>}
                               </div>
                             )}
                           </div>
@@ -539,7 +546,7 @@ const App: React.FC = () => {
               <div className="flex-1 overflow-y-auto pr-2 space-y-8">
                 <div><label className="block text-sm font-medium text-slate-400 mb-3 uppercase tracking-wider text-[10px]">Tags</label>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {selectedDeck.cards[activeCardIndex].tags.length === 0 ? <p className="text-slate-600 text-sm italic">No tags added yet</p> : selectedDeck.cards[activeCardIndex].tags.map((tag, idx) => (<span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded-full text-xs font-semibold group">{tag}<button onClick={() => removeTagFromCard(selectedDeck.id, activeCardIndex, tag)} className="hover:text-red-400 transition-colors"><CloseIcon size={12} /></button></span>))}
+                    {(!selectedDeck.cards[activeCardIndex].tags || selectedDeck.cards[activeCardIndex].tags.length === 0) ? <p className="text-slate-600 text-sm italic">No tags added yet</p> : selectedDeck.cards[activeCardIndex].tags.map((tag, idx) => (<span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 rounded-full text-xs font-semibold group">{tag}<button onClick={() => removeTagFromCard(selectedDeck.id, activeCardIndex, tag)} className="hover:text-red-400 transition-colors"><CloseIcon size={12} /></button></span>))}
                   </div>
                   <div className="flex gap-2"><input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addTagToCard(selectedDeck.id, activeCardIndex, tagInput); }} placeholder="Add tag..." className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white text-sm focus:ring-1 focus:ring-indigo-600 outline-none transition-all placeholder:text-slate-700" /><button onClick={() => addTagToCard(selectedDeck.id, activeCardIndex, tagInput)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-bold transition-colors">Add</button></div>
                 </div>

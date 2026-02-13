@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { CardImage } from "../types";
+import { CardImage } from "../types.ts";
 
 export const analyzeDeck = async (name: string, notes: string, cards: CardImage[]): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

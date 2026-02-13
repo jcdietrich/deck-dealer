@@ -1,5 +1,5 @@
 
-import { Deck } from '../types';
+import { Deck } from '../types.ts';
 
 const DB_NAME = 'DeckMasterDB';
 const STORE_NAME = 'decks';

@@ -1,6 +1,6 @@
 
 import JSZip from 'jszip';
-import { CardImage } from '../types';
+import { CardImage } from '../types.ts';
 
 export const extractImagesFromZip = async (file: File): Promise<CardImage[]> => {
   const zip = new JSZip();
