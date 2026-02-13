@@ -1,0 +1,5 @@
+{
+  "name": "DeckMaster: Card Collection Tool",
+  "description": "A high-end card deck management application that allows users to organize their custom decks, upload images via ZIP, and use AI to analyze deck themes and mechanics.",
+  "requestFramePermissions": []
+}
