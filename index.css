@@ -1,0 +1,35 @@
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0f172a;
+  color: #f8fafc;
+  /* Prevents pull-to-refresh on mobile which can interrupt the card viewer */
+  overscroll-behavior-y: contain;
+  margin: 0;
+}
+
+/* Hide scrollbars for a cleaner app-like look */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* 3D Perspective for Card Flips */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Ensure smooth image transitions */
+img {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* App-like feel for PWA */
+* {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+input, textarea {
+  user-select: text;
+}
